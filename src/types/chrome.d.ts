@@ -10,6 +10,10 @@ declare namespace chrome {
       addListener(callback: (message: any, sender: any, sendResponse: (response?: any) => void) => void): void;
       removeListener(callback: (message: any, sender: any, sendResponse: (response?: any) => void) => void): void;
     };
+    
+    const lastError: {
+      message: string;
+    } | undefined;
   }
   
   namespace storage {

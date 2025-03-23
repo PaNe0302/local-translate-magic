@@ -2,11 +2,6 @@
 import { translationApi } from './translationApi';
 import { toast } from 'sonner';
 
-interface TextNode {
-  id: string;
-  text: string;
-}
-
 class PageTranslationService {
   async translatePage(targetLanguage: string = 'en'): Promise<boolean> {
     return new Promise((resolve) => {
@@ -18,10 +13,10 @@ class PageTranslationService {
       
       chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         try {
-          const connected = await translationApi.checkHealth();
+          const healthCheck = await translationApi.checkHealth();
           
-          if (!connected) {
-            toast.error('Cannot connect to LMStudio. Please check if the application is running.');
+          if (!healthCheck.connected) {
+            toast.error(healthCheck.error || 'Cannot connect to LMStudio');
             resolve(false);
             return;
           }
@@ -57,14 +52,14 @@ class PageTranslationService {
                 resolve(true);
               } catch (error) {
                 console.error('Translation error:', error);
-                toast.error('Translation failed. Please try again.');
+                toast.error(error instanceof Error ? error.message : 'Translation failed. Please try again.');
                 resolve(false);
               }
             }
           );
         } catch (error) {
           console.error('Page translation error:', error);
-          toast.error('Page translation failed. Please try again.');
+          toast.error(error instanceof Error ? error.message : 'Page translation failed. Please try again.');
           resolve(false);
         }
       });

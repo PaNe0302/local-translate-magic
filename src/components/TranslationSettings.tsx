@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { ENDPOINTS } from '@/config/endpoints';
 const TranslationSettings: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [endpoint, setEndpoint] = useState(ENDPOINTS.LM_STUDIO);
-  const { isConnected, checkConnection } = useTranslation();
+  const { isConnected, connectionError, checkConnection } = useTranslation();
   
   // Load the saved endpoint from localStorage on component mount
   useEffect(() => {
@@ -46,7 +46,7 @@ const TranslationSettings: React.FC = () => {
     if (connected) {
       toast.success('Successfully connected to LMStudio');
     } else {
-      toast.error('Failed to connect to LMStudio');
+      toast.error(connectionError || 'Failed to connect to LMStudio');
     }
   };
 
@@ -116,6 +116,25 @@ const TranslationSettings: React.FC = () => {
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span>{isConnected ? 'Connected to LMStudio' : 'Not connected to LMStudio'}</span>
             </div>
+            
+            {!isConnected && connectionError && (
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 text-xs p-2 rounded-md flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <p>{connectionError}</p>
+              </div>
+            )}
+            
+            {!isConnected && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-xs p-2 rounded-md">
+                <p className="font-medium mb-1">Troubleshooting tips:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Make sure LMStudio is running on your computer</li>
+                  <li>Check that the endpoint URL is correct</li>
+                  <li>LMStudio may need CORS enabled for web access</li>
+                  <li>Try using localhost instead of an IP address</li>
+                </ul>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

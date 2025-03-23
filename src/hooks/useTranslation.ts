@@ -16,6 +16,7 @@ interface TranslationHook {
   removeHistoryItem: (id: string) => void;
   clearHistory: () => void;
   isConnected: boolean;
+  connectionError: string | null;
   checkConnection: () => Promise<boolean>;
 }
 
@@ -24,11 +25,13 @@ export const useTranslation = (): TranslationHook => {
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [translationHistory, setTranslationHistory] = useState<TranslationHistoryItem[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const checkConnection = useCallback(async (): Promise<boolean> => {
-    const connected = await translationApi.checkHealth();
-    setIsConnected(connected);
-    return connected;
+    const result = await translationApi.checkHealth();
+    setIsConnected(result.connected);
+    setConnectionError(result.error || null);
+    return result.connected;
   }, []);
   
   useEffect(() => {
@@ -37,7 +40,10 @@ export const useTranslation = (): TranslationHook => {
     if (storedEndpoint) {
       translationApi.setEndpoint(storedEndpoint);
     }
-  }, []);
+    
+    // Initial connection check
+    checkConnection();
+  }, [checkConnection]);
 
   const translateText = useCallback(async (text: string, toLang: string): Promise<void> => {
     if (!text.trim()) return;
@@ -48,7 +54,7 @@ export const useTranslation = (): TranslationHook => {
       const connected = await checkConnection();
       
       if (!connected) {
-        toast.error('Cannot connect to LMStudio. Please check if the application is running.');
+        toast.error(connectionError || 'Cannot connect to LMStudio');
         setIsTranslating(false);
         return;
       }
@@ -73,11 +79,11 @@ export const useTranslation = (): TranslationHook => {
       
     } catch (error) {
       console.error('Translation error:', error);
-      toast.error('Translation failed. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Translation failed. Please try again.');
     } finally {
       setIsTranslating(false);
     }
-  }, [checkConnection]);
+  }, [checkConnection, connectionError]);
 
   const translatePage = useCallback(async (): Promise<void> => {
     setIsTranslating(true);
@@ -107,6 +113,7 @@ export const useTranslation = (): TranslationHook => {
     removeHistoryItem,
     clearHistory,
     isConnected,
+    connectionError,
     checkConnection,
   };
 };

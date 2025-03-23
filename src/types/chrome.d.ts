@@ -6,7 +6,7 @@ declare namespace chrome {
     function sendMessage(message: any, callback: (response: any) => void): void;
     function sendMessage(extensionId: string, message: any, responseCallback: (response: any) => void): void;
     
-    function onMessage: {
+    const onMessage: {
       addListener(callback: (message: any, sender: any, sendResponse: (response?: any) => void) => void): void;
       removeListener(callback: (message: any, sender: any, sendResponse: (response?: any) => void) => void): void;
     };
@@ -27,7 +27,7 @@ declare namespace chrome {
       clear(callback?: () => void): void;
     };
     
-    function onChanged: {
+    const onChanged: {
       addListener(callback: (changes: { [key: string]: { oldValue: any; newValue: any } }, areaName: string) => void): void;
       removeListener(callback: (changes: { [key: string]: { oldValue: any; newValue: any } }, areaName: string) => void): void;
     };
@@ -36,5 +36,17 @@ declare namespace chrome {
   namespace tabs {
     function query(queryInfo: { active: boolean; currentWindow: boolean }, callback: (tabs: any[]) => void): void;
     function sendMessage(tabId: number, message: any, callback?: (response: any) => void): void;
+  }
+  
+  namespace contextMenus {
+    function create(properties: {
+      id: string;
+      title: string;
+      contexts: string[];
+    }, callback?: () => void): void;
+    
+    const onClicked: {
+      addListener(callback: (info: { menuItemId: string; selectionText?: string }, tab: any) => void): void;
+    };
   }
 }

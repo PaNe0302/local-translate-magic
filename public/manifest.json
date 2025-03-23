@@ -20,14 +20,16 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "contextMenus"
   ],
   "host_permissions": [
-    "http://100.108.173.6:*",
-    "http://localhost:*"
+    "http://localhost:*",
+    "http://127.0.0.1:*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {

@@ -112,6 +112,11 @@ export default {
 				'blur-in': {
 					'0%': { filter: 'blur(4px)', opacity: '0' },
 					'100%': { filter: 'blur(0)', opacity: '1' }
+				},
+				'gradient-x': {
+					'0%': { backgroundPosition: '0% 50%' },
+					'50%': { backgroundPosition: '100% 50%' },
+					'100%': { backgroundPosition: '0% 50%' }
 				}
 			},
 			animation: {
@@ -122,7 +127,8 @@ export default {
 				'slide-up': 'slide-up 0.3s ease-out',
 				'slide-down': 'slide-down 0.3s ease-out',
 				'scale-in': 'scale-in 0.3s ease-out',
-				'blur-in': 'blur-in 0.3s ease-out'
+				'blur-in': 'blur-in 0.3s ease-out',
+				'gradient-x': 'gradient-x 10s ease infinite'
 			}
 		}
 	},

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,20 +7,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
+import { translationApi } from '@/services/translationApi';
+import { ENDPOINTS } from '@/config/endpoints';
 
 const TranslationSettings: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [endpoint, setEndpoint] = useState('http://100.108.173.6:1234');
-  const { checkConnection, isConnected } = useTranslation();
+  const [endpoint, setEndpoint] = useState(ENDPOINTS.LM_STUDIO);
+  const { isConnected, checkConnection } = useTranslation();
+  
+  // Load the saved endpoint from localStorage on component mount
+  useEffect(() => {
+    const savedEndpoint = localStorage.getItem('lmStudioEndpoint');
+    if (savedEndpoint) {
+      setEndpoint(savedEndpoint);
+      // Also update the endpoint in the translation API service
+      translationApi.setEndpoint(savedEndpoint);
+    }
+  }, []);
   
   const handleSaveEndpoint = () => {
-    // In a real extension, we would save this to chrome.storage.sync
+    // Save to localStorage
     localStorage.setItem('lmStudioEndpoint', endpoint);
+    
+    // Update the endpoint in the translation API service
+    translationApi.setEndpoint(endpoint);
+    
     toast.success('Endpoint saved');
+    
+    // Check connection with the new endpoint
     checkConnection();
   };
   
   const handleTestConnection = async () => {
+    // Set current endpoint for the test
+    translationApi.setEndpoint(endpoint);
+    
     const connected = await checkConnection();
     if (connected) {
       toast.success('Successfully connected to LMStudio');

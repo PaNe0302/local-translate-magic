@@ -1,164 +1,252 @@
 
-import { translationApi } from './translationApi';
 import { toast } from 'sonner';
+import { translationApi } from './translationApi';
+
+interface TextNode {
+  id: string;
+  text: string;
+  isAlreadyTranslated?: boolean;
+}
 
 class PageTranslationService {
-  async translatePage(targetLanguage: string = 'vi'): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (typeof chrome === 'undefined' || !chrome.tabs) {
-        toast.error('Extension API not available. This feature works only in the Chrome extension.');
-        resolve(false);
+  private isTranslating: boolean = false;
+  private targetLanguage: string = 'en';
+  
+  /**
+   * Translates the current active web page
+   */
+  async translatePage(): Promise<void> {
+    if (this.isTranslating) {
+      toast.error('Translation already in progress');
+      return;
+    }
+    
+    this.isTranslating = true;
+    
+    try {
+      // First, check connection to LMStudio
+      const healthCheck = await translationApi.checkHealth();
+      if (!healthCheck.connected) {
+        toast.error(healthCheck.error || 'Cannot connect to LMStudio');
+        this.isTranslating = false;
         return;
       }
       
-      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        if (!tabs || !tabs[0] || !tabs[0].id) {
-          toast.error('No active tab found');
-          resolve(false);
-          return;
-        }
+      // Get text nodes from the active tab
+      const textNodes = await this.getPageContent();
+      
+      if (!textNodes || textNodes.length === 0) {
+        toast.error('No translatable content found on this page');
+        this.isTranslating = false;
+        return;
+      }
+      
+      toast.info(`Translating ${textNodes.length} elements on the page...`);
+      
+      // Process nodes in batches to avoid overwhelming the API
+      const batchSize = 5;
+      let completedCount = 0;
+      let failedCount = 0;
+      
+      for (let i = 0; i < textNodes.length; i += batchSize) {
+        const batch = textNodes.slice(i, i + batchSize);
         
-        try {
-          const healthCheck = await translationApi.checkHealth();
-          
-          if (!healthCheck.connected) {
-            toast.error(healthCheck.error || 'Cannot connect to LMStudio');
-            resolve(false);
-            return;
-          }
-          
-          // First inject content script if not already injected
+        // Process each batch in parallel
+        const promises = batch.map(async (node) => {
           try {
-            await this.injectContentScriptIfNeeded(tabs[0].id);
-          } catch (error) {
-            console.error('Failed to inject content script:', error);
-            toast.error('Cannot access page content. Please refresh and try again.');
-            resolve(false);
-            return;
-          }
-          
-          // Get page content
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            { action: 'getPageContent' },
-            async (response) => {
-              if (chrome.runtime.lastError) {
-                console.error('Content script error:', chrome.runtime.lastError);
-                toast.error('Could not connect to the page. Please refresh and try again.');
-                resolve(false);
-                return;
-              }
-              
-              if (!response || !response.textNodes || response.textNodes.length === 0) {
-                toast.error('No translatable content found on this page');
-                resolve(false);
-                return;
-              }
-              
-              console.log('Found text nodes:', response.textNodes.length);
-              toast.success(`Found ${response.textNodes.length} translatable elements`);
-              
-              try {
-                let translatedCount = 0;
-                // Process text nodes in smaller batches to avoid overwhelming the translation API
-                const batchSize = 5;
-                for (let i = 0; i < response.textNodes.length; i += batchSize) {
-                  const batch = response.textNodes.slice(i, i + batchSize);
-                  
-                  // Process each text node in the batch
-                  await Promise.all(batch.map(async (node: any) => {
-                    // Skip very short text or already translated text
-                    if (node.text.trim().length < 2 || node.isAlreadyTranslated) {
-                      return;
-                    }
-                    
-                    try {
-                      toast.info(`Translating element ${i + batch.indexOf(node) + 1}/${response.textNodes.length}...`);
-                      
-                      const data = await translationApi.translateText({
-                        text: node.text,
-                        target_language: targetLanguage,
-                      });
-                      
-                      // Send translated text back to content script
-                      chrome.tabs.sendMessage(tabs[0].id!, {
-                        action: 'replaceText',
-                        nodeId: node.id,
-                        translatedText: data.translatedText,
-                      });
-                      
-                      translatedCount++;
-                    } catch (error) {
-                      console.error(`Error translating node ${node.id}:`, error);
-                    }
-                  }));
-                  
-                  // Small pause between batches to not overload the API
-                  await new Promise(r => setTimeout(r, 200));
-                }
-                
-                if (translatedCount > 0) {
-                  toast.success(`Translated ${translatedCount} elements successfully`);
-                  resolve(true);
-                } else {
-                  toast.warning('No elements were translated');
-                  resolve(false);
-                }
-              } catch (error) {
-                console.error('Translation error:', error);
-                toast.error(error instanceof Error ? error.message : 'Translation failed. Please try again.');
-                resolve(false);
-              }
-            }
-          );
-        } catch (error) {
-          console.error('Page translation error:', error);
-          toast.error(error instanceof Error ? error.message : 'Page translation failed. Please try again.');
-          resolve(false);
-        }
-      });
-    });
-  }
-  
-  private async injectContentScriptIfNeeded(tabId: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        chrome.tabs.sendMessage(tabId, { action: 'ping' }, (response) => {
-          const lastError = chrome.runtime.lastError;
-          
-          if (lastError || !response) {
-            console.log('Content script not detected, injecting now...');
-            
-            if (!chrome.scripting) {
-              console.error('chrome.scripting API not available');
-              reject(new Error('chrome.scripting API not available'));
+            // Skip already translated nodes
+            if (node.isAlreadyTranslated) {
+              completedCount++;
               return;
             }
             
-            chrome.scripting.executeScript(
-              {
-                target: { tabId },
-                files: ['content.js']
-              }
-            ).then(() => {
-              console.log('Content script injected successfully');
-              // Give the content script a moment to initialize
-              setTimeout(resolve, 300);
-            }).catch((err) => {
-              console.error('Script injection error:', err);
-              reject(err);
+            // Skip very short text (not worth translating)
+            if (node.text.trim().length < 5) {
+              completedCount++;
+              return;
+            }
+            
+            const response = await translationApi.translateText({
+              text: node.text,
+              target_language: this.targetLanguage,
             });
-          } else {
-            // Content script is already injected
-            console.log('Content script already injected');
-            resolve();
+            
+            if (response.translatedText) {
+              await this.replaceText(node.id, response.translatedText);
+              completedCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (error) {
+            console.error(`Failed to translate node ${node.id}:`, error);
+            failedCount++;
           }
         });
-      } catch (error) {
-        console.error('Error checking content script:', error);
-        reject(error);
+        
+        // Wait for the batch to complete
+        await Promise.all(promises);
+        
+        // Update progress
+        if ((i + batchSize) % 20 === 0 || i + batchSize >= textNodes.length) {
+          toast.info(`Translation progress: ${completedCount} of ${textNodes.length} elements`);
+        }
       }
-    });
+      
+      if (failedCount > 0) {
+        toast.warning(`Translation completed with ${failedCount} errors`);
+      } else {
+        toast.success('Translation completed successfully');
+      }
+      
+    } catch (error) {
+      console.error('Page translation error:', error);
+      toast.error('Failed to translate page: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      this.isTranslating = false;
+    }
+  }
+  
+  /**
+   * Restores the original text of the page
+   */
+  async restoreOriginal(): Promise<void> {
+    try {
+      // Get the active tab
+      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          resolve(tabs);
+        });
+      });
+      
+      if (!tabs || tabs.length === 0 || !tabs[0].id) {
+        throw new Error('No active tab found');
+      }
+      
+      // Send message to the content script to restore original text
+      await new Promise<void>((resolve, reject) => {
+        chrome.tabs.sendMessage(
+          tabs[0].id as number,
+          { action: 'restoreOriginal' },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (response.error) {
+              reject(new Error(response.error));
+            } else {
+              resolve();
+            }
+          }
+        );
+      });
+      
+      toast.success('Original text restored');
+    } catch (error) {
+      console.error('Error restoring original text:', error);
+      toast.error('Failed to restore original text: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+  
+  /**
+   * Sets the target language for translation
+   */
+  setTargetLanguage(languageCode: string): void {
+    this.targetLanguage = languageCode;
+  }
+  
+  /**
+   * Gets all text content from the current page
+   */
+  private async getPageContent(): Promise<TextNode[]> {
+    try {
+      // Get the active tab
+      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          resolve(tabs);
+        });
+      });
+      
+      if (!tabs || tabs.length === 0 || !tabs[0].id) {
+        throw new Error('No active tab found');
+      }
+      
+      // Ensure content script is injected
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          files: ['content.js']
+        });
+      } catch (error) {
+        console.warn('Content script may already be loaded:', error);
+      }
+      
+      // Send message to the content script to get all text nodes
+      const response = await new Promise<any>((resolve, reject) => {
+        setTimeout(() => {
+          chrome.tabs.sendMessage(
+            tabs[0].id as number,
+            { action: 'getPageContent' },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+              } else {
+                resolve(response);
+              }
+            }
+          );
+        }, 500); // Give content script some time to initialize
+      });
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      return response.textNodes || [];
+    } catch (error) {
+      console.error('Error getting page content:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Replaces a specific text node with translated text
+   */
+  private async replaceText(nodeId: string, translatedText: string): Promise<void> {
+    try {
+      // Get the active tab
+      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          resolve(tabs);
+        });
+      });
+      
+      if (!tabs || tabs.length === 0 || !tabs[0].id) {
+        throw new Error('No active tab found');
+      }
+      
+      // Send message to the content script to replace text
+      await new Promise<void>((resolve, reject) => {
+        chrome.tabs.sendMessage(
+          tabs[0].id as number,
+          { 
+            action: 'replaceText',
+            nodeId,
+            translatedText
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (response.error) {
+              reject(new Error(response.error));
+            } else {
+              resolve();
+            }
+          }
+        );
+      });
+    } catch (error) {
+      console.error(`Error replacing text for node ${nodeId}:`, error);
+      throw error;
+    }
   }
 }
 

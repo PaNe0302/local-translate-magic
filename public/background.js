@@ -1,6 +1,21 @@
 
 // Background script for LocalTranslate Chrome extension
 
+// Function to inject content script more reliably
+async function injectContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js']
+    });
+    console.log('Content script injected successfully into tab:', tabId);
+    return true;
+  } catch (error) {
+    console.error('Failed to inject content script:', error);
+    return false;
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log('LocalTranslate extension installed');
   
@@ -23,29 +38,34 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "translatePage") {
     // Notify the active tab to start translation
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs && tabs[0] && tabs[0].id) {
-        // Ensure the content script is loaded
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          files: ['content.js']
-        }).then(() => {
+        try {
+          // First ensure the content script is loaded
+          const injected = await injectContentScript(tabs[0].id);
+          
           // Give the content script a moment to initialize
           setTimeout(() => {
             chrome.tabs.sendMessage(tabs[0].id, { action: "getPageContent" }, response => {
               if (chrome.runtime.lastError) {
                 console.error('Message sending error:', chrome.runtime.lastError);
-                sendResponse({ error: chrome.runtime.lastError.message });
+                sendResponse({ 
+                  error: chrome.runtime.lastError.message,
+                  details: "Could not communicate with the page. This might be due to security restrictions."
+                });
               } else {
                 // Pass the response back to whoever requested the translation
                 sendResponse(response);
               }
             });
-          }, 300);
-        }).catch(error => {
+          }, 500);
+        } catch (error) {
           console.error('Script injection error:', error);
-          sendResponse({ error: 'Failed to inject content script' });
-        });
+          sendResponse({ 
+            error: 'Failed to inject content script',
+            details: error.message
+          });
+        }
       } else {
         sendResponse({ error: 'No active tab found' });
       }

@@ -73,6 +73,6 @@ export default defineConfig(({ mode }) => ({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000, // Increase the chunk size warning limit
   }
 }));

@@ -6,6 +6,28 @@ let originalNodes = new Map();
 let translatedNodes = new Map();
 let nodeCounter = 0;
 let isTranslating = false;
+let alreadyInjected = false;
+
+// Flag to ensure injection only happens once
+if (!alreadyInjected) {
+  // Add a custom style for translated elements
+  const style = document.createElement('style');
+  style.textContent = `
+    .local-translate-highlight {
+      background-color: rgba(255, 255, 0, 0.15);
+      border-radius: 2px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .local-translate-highlight:hover {
+      background-color: rgba(255, 255, 0, 0.3);
+    }
+  `;
+  document.head.appendChild(style);
+  
+  alreadyInjected = true;
+  console.log("LocalTranslate content script loaded and styles injected");
+}
 
 // Helper function to get all text nodes in the document
 function getTextNodes() {
@@ -25,6 +47,9 @@ function getTextNodes() {
           node.parentNode.tagName === 'SCRIPT' ||
           node.parentNode.tagName === 'STYLE' ||
           node.parentNode.tagName === 'NOSCRIPT' ||
+          node.parentNode.tagName === 'META' ||
+          node.parentNode.tagName === 'LINK' ||
+          node.parentNode.tagName === 'TITLE' ||
           node.textContent.trim() === ''
         ) {
           return NodeFilter.FILTER_REJECT;
@@ -36,8 +61,13 @@ function getTextNodes() {
         }
         
         // Skip hidden elements
-        const style = window.getComputedStyle(node.parentNode);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        try {
+          const style = window.getComputedStyle(node.parentNode);
+          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+            return NodeFilter.FILTER_REJECT;
+          }
+        } catch (e) {
+          // Skip nodes with styling issues
           return NodeFilter.FILTER_REJECT;
         }
         
@@ -55,6 +85,9 @@ function getTextNodes() {
       if (node.textContent.trim().length > 0) {
         const nodeId = `ln-${nodeCounter++}`;
         
+        // Check if content is already likely to be translated
+        const isAlreadyTranslated = translatedNodes.has(nodeId);
+        
         // Store original node and text
         originalNodes.set(nodeId, {
           node,
@@ -64,7 +97,8 @@ function getTextNodes() {
         // Add to result
         textNodes.push({
           id: nodeId,
-          text: node.textContent
+          text: node.textContent,
+          isAlreadyTranslated
         });
       }
     }
@@ -80,14 +114,22 @@ function getTextNodes() {
 // Highlight translated elements for better visibility
 function highlightElement(node) {
   if (node && node.parentNode) {
-    node.parentNode.classList.add('local-translate-highlight');
+    try {
+      node.parentNode.classList.add('local-translate-highlight');
+    } catch (e) {
+      console.warn("Could not highlight node:", e);
+    }
   }
 }
 
 // Remove highlight
 function removeHighlight(node) {
   if (node && node.parentNode) {
-    node.parentNode.classList.remove('local-translate-highlight');
+    try {
+      node.parentNode.classList.remove('local-translate-highlight');
+    } catch (e) {
+      console.warn("Could not remove highlight from node:", e);
+    }
   }
 }
 
@@ -137,11 +179,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         originalNode.node.textContent = translatedText;
         translatedNodes.set(nodeId, translatedText);
         highlightElement(originalNode.node);
+        sendResponse({ success: true });
       } else {
         console.warn(`Node ${nodeId} not found for replacement`);
+        sendResponse({ error: `Node ${nodeId} not found` });
       }
     } catch (error) {
       console.error("Error replacing text:", error);
+      sendResponse({ error: error.message });
     }
     return true;
   }
@@ -167,20 +212,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// Initialize the extension state on the page
-console.log("LocalTranslate content script loaded");
-
-// Add a custom style for translated elements
-const style = document.createElement('style');
-style.textContent = `
-  .local-translate-highlight {
-    background-color: rgba(255, 255, 0, 0.15);
-    border-radius: 2px;
-    transition: background-color 0.3s ease;
-  }
-  
-  .local-translate-highlight:hover {
-    background-color: rgba(255, 255, 0, 0.3);
-  }
-`;
-document.head.appendChild(style);
+console.log("LocalTranslate content script ready");

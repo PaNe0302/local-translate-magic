@@ -29,26 +29,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           files: ['content.js']
-        }, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Script injection error:', chrome.runtime.lastError);
-          } else {
-            // Give the content script a moment to initialize
-            setTimeout(() => {
-              chrome.tabs.sendMessage(tabs[0].id, { action: "getPageContent" });
-            }, 300);
-          }
+        }).then(() => {
+          // Give the content script a moment to initialize
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "getPageContent" }, response => {
+              if (chrome.runtime.lastError) {
+                console.error('Message sending error:', chrome.runtime.lastError);
+                sendResponse({ error: chrome.runtime.lastError.message });
+              } else {
+                // Pass the response back to whoever requested the translation
+                sendResponse(response);
+              }
+            });
+          }, 300);
+        }).catch(error => {
+          console.error('Script injection error:', error);
+          sendResponse({ error: 'Failed to inject content script' });
         });
+      } else {
+        sendResponse({ error: 'No active tab found' });
       }
     });
-    sendResponse({ status: "Translation initiated" });
+    return true; // Keep the message channel open for the async response
   }
+  
   return true;
 });
 
 // Handle context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "translate-selection") {
+  if (info.menuItemId === "translate-selection" && info.selectionText) {
     // Send the selected text to the popup for translation
     chrome.runtime.sendMessage({
       action: "translateSelection",
@@ -58,6 +68,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     // Tell the popup to translate the current page
     chrome.runtime.sendMessage({
       action: "translatePage"
+    });
+  }
+});
+
+// Listen for connections from content scripts
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "content-script") {
+    port.onMessage.addListener((message) => {
+      console.log("Received message from content script:", message);
+      // Process messages as needed
     });
   }
 });

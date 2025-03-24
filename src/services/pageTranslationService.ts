@@ -121,29 +121,36 @@ class PageTranslationService {
   }
   
   private async injectContentScriptIfNeeded(tabId: number): Promise<void> {
-    // Check if content script is already injected
     return new Promise((resolve, reject) => {
       try {
         chrome.tabs.sendMessage(tabId, { action: 'ping' }, (response) => {
-          if (chrome.runtime.lastError || !response) {
-            // Content script is not injected yet, inject it
-            chrome.scripting?.executeScript(
+          const lastError = chrome.runtime.lastError;
+          
+          if (lastError || !response) {
+            console.log('Content script not detected, injecting now...');
+            
+            if (!chrome.scripting) {
+              console.error('chrome.scripting API not available');
+              reject(new Error('chrome.scripting API not available'));
+              return;
+            }
+            
+            chrome.scripting.executeScript(
               {
-                target: { tabId: tabId },
+                target: { tabId },
                 files: ['content.js']
-              },
-              () => {
-                if (chrome.runtime.lastError) {
-                  console.error('Script injection error:', chrome.runtime.lastError);
-                  reject(chrome.runtime.lastError);
-                } else {
-                  // Give the content script a moment to initialize
-                  setTimeout(resolve, 300);
-                }
               }
-            );
+            ).then(() => {
+              console.log('Content script injected successfully');
+              // Give the content script a moment to initialize
+              setTimeout(resolve, 300);
+            }).catch((err) => {
+              console.error('Script injection error:', err);
+              reject(err);
+            });
           } else {
             // Content script is already injected
+            console.log('Content script already injected');
             resolve();
           }
         });

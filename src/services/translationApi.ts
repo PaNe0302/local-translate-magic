@@ -19,11 +19,19 @@ class TranslationApiService {
         },
         mode: 'cors',
         credentials: 'omit',
+        cache: 'no-cache',
       });
       
-      const data = await response.json();
-      // If we get a successful response, we can consider the server connected
-      return { connected: response.ok };
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        return { 
+          connected: false, 
+          error: `Server returned ${response.status}: ${errorText}`
+        };
+      }
+      
+      await response.json(); // We don't need the data, just confirming it's valid JSON
+      return { connected: true };
     } catch (error) {
       console.error('Connection error:', error);
       let errorMessage = 'Failed to connect';
@@ -47,7 +55,7 @@ class TranslationApiService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gwen2.5-7b-instruct-1m", // Use the model name from your screenshot
+          model: "application/json", // LMStudio often ignores this field
           messages: [
             {
               role: "system",
@@ -66,7 +74,8 @@ class TranslationApiService {
       });
       
       if (!response.ok) {
-        throw new Error(`Translation failed: ${response.statusText}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Translation failed: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();

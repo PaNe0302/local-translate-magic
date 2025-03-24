@@ -35,6 +35,8 @@ class PageTranslationService {
               try {
                 // Process each text node
                 for (const node of response.textNodes) {
+                  toast.info(`Translating segment ${node.id}...`);
+                  
                   const data = await translationApi.translateText({
                     text: node.text,
                     target_language: targetLanguage,

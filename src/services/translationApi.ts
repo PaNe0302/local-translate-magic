@@ -11,22 +11,23 @@ class TranslationApiService {
 
   async checkHealth(): Promise<{ connected: boolean; error?: string }> {
     try {
-      const response = await fetch(`${this.endpoint}/health`, {
+      // Instead of using /health, use the /v1/models endpoint which is available in LMStudio
+      const response = await fetch(`${this.endpoint}/v1/models`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Adding these options to help with CORS issues
         mode: 'cors',
         credentials: 'omit',
       });
       
+      const data = await response.json();
+      // If we get a successful response, we can consider the server connected
       return { connected: response.ok };
     } catch (error) {
       console.error('Connection error:', error);
       let errorMessage = 'Failed to connect';
       
-      // More specific error messages based on error type
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         errorMessage = 'Network error: LMStudio may not be running or CORS is blocked';
       } else if (error instanceof Error) {
@@ -39,13 +40,27 @@ class TranslationApiService {
 
   async translateText(request: TranslateTextRequest): Promise<TranslateTextResponse> {
     try {
-      const response = await fetch(`${this.endpoint}/translate`, {
+      // For translation, we'll use the /v1/chat/completions endpoint which is standard in OpenAI-compatible APIs
+      const response = await fetch(`${this.endpoint}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
-        // Adding these options to help with CORS issues
+        body: JSON.stringify({
+          model: "gwen2.5-7b-instruct-1m", // Use the model name from your screenshot
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful translator. Translate the following text to ${request.target_language}.`
+            },
+            {
+              role: "user",
+              content: request.text
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        }),
         mode: 'cors',
         credentials: 'omit',
       });
@@ -54,7 +69,19 @@ class TranslationApiService {
         throw new Error(`Translation failed: ${response.statusText}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      
+      // Extract the translated text from the assistant's message
+      const translatedText = data.choices && data.choices[0]?.message?.content;
+      
+      if (!translatedText) {
+        throw new Error("No translation returned from LMStudio");
+      }
+      
+      return {
+        translatedText,
+        detectedLanguage: "auto", // LMStudio doesn't provide language detection
+      };
     } catch (error) {
       console.error('Translation error:', error);
       if (error instanceof TypeError && error.message === 'Failed to fetch') {

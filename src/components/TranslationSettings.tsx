@@ -88,7 +88,7 @@ const TranslationSettings: React.FC = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                The URL where your LMStudio instance is running
+                The URL where your LMStudio instance is running (e.g., http://100.108.173.6:1234)
               </p>
             </div>
             
@@ -126,12 +126,13 @@ const TranslationSettings: React.FC = () => {
             
             {!isConnected && (
               <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-xs p-2 rounded-md">
-                <p className="font-medium mb-1">Troubleshooting tips:</p>
+                <p className="font-medium mb-1">LMStudio Setup Guide:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Make sure LMStudio is running on your computer</li>
-                  <li>Check that the endpoint URL is correct</li>
-                  <li>LMStudio may need CORS enabled for web access</li>
-                  <li>Try using localhost instead of an IP address</li>
+                  <li>Verify your LMStudio is running (Status: Running)</li>
+                  <li>Use the IP and port shown in the "Reachable at" field in LMStudio</li>
+                  <li>Make sure the Chat endpoint is available (/v1/chat/completions)</li>
+                  <li>If using CORS, enable it in LMStudio settings</li>
+                  <li>Check the console logs for specific error details</li>
                 </ul>
               </div>
             )}

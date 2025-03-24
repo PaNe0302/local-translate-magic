@@ -53,4 +53,18 @@ declare namespace chrome {
       addListener(callback: (info: { menuItemId: string; selectionText?: string }, tab: any) => void): void;
     };
   }
+  
+  // Add the scripting API namespace
+  namespace scripting {
+    interface ScriptInjection {
+      target: { tabId: number };
+      files?: string[];
+      func?: Function;
+      args?: any[];
+      injectImmediately?: boolean;
+      world?: 'ISOLATED' | 'MAIN';
+    }
+    
+    function executeScript(injection: ScriptInjection, callback?: (results: any[]) => void): Promise<any[]>;
+  }
 }

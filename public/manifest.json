@@ -36,12 +36,13 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "type": "module"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["*.png"],
+      "resources": ["*.png", "content/*.js"],
       "matches": ["<all_urls>"]
     }
   ],

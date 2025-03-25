@@ -37,6 +37,7 @@ interface Chrome {
       message: any,
       callback?: (response: any) => void
     ) => void;
+    Tab: any; // Explicitly adding Tab interface reference
   };
   scripting: {
     executeScript: (params: {
@@ -77,7 +78,7 @@ interface Chrome {
 }
 
 declare global {
-  const chrome: Chrome;
+  var chrome: Chrome;
 }
 
 export {};

@@ -115,7 +115,7 @@ class PageTranslationService {
   async restoreOriginal(): Promise<void> {
     try {
       // Get the active tab
-      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+      const tabs = await new Promise<chrome.runtime.MessageSender['tab'][]>((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.tabs) {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             resolve(tabs);
@@ -166,7 +166,7 @@ class PageTranslationService {
   private async getPageContent(): Promise<TextNode[]> {
     try {
       // Get the active tab
-      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+      const tabs = await new Promise<any[]>((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.tabs) {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             resolve(tabs);
@@ -182,10 +182,12 @@ class PageTranslationService {
       
       // Ensure content script is injected
       try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          files: ['content.js']
-        });
+        if (chrome && chrome.scripting) {
+          await chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            files: ['content.js']
+          });
+        }
       } catch (error) {
         console.warn('Content script may already be loaded:', error);
       }
@@ -193,17 +195,21 @@ class PageTranslationService {
       // Send message to the content script to get all text nodes
       const response = await new Promise<any>((resolve, reject) => {
         setTimeout(() => {
-          chrome.tabs.sendMessage(
-            tabs[0].id as number,
-            { action: 'getPageContent' },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-              } else {
-                resolve(response);
+          if (chrome && chrome.tabs) {
+            chrome.tabs.sendMessage(
+              tabs[0].id as number,
+              { action: 'getPageContent' },
+              (response) => {
+                if (chrome.runtime && chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve(response);
+                }
               }
-            }
-          );
+            );
+          } else {
+            reject(new Error('Chrome API not available'));
+          }
         }, 500); // Give content script some time to initialize
       });
       
@@ -224,7 +230,7 @@ class PageTranslationService {
   private async replaceText(nodeId: string, translatedText: string): Promise<void> {
     try {
       // Get the active tab
-      const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+      const tabs = await new Promise<any[]>((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.tabs) {
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             resolve(tabs);
@@ -240,23 +246,27 @@ class PageTranslationService {
       
       // Send message to the content script to replace text
       await new Promise<void>((resolve, reject) => {
-        chrome.tabs.sendMessage(
-          tabs[0].id as number,
-          { 
-            action: 'replaceText',
-            nodeId,
-            translatedText
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (response.error) {
-              reject(new Error(response.error));
-            } else {
-              resolve();
+        if (chrome && chrome.tabs) {
+          chrome.tabs.sendMessage(
+            tabs[0].id as number,
+            { 
+              action: 'replaceText',
+              nodeId,
+              translatedText
+            },
+            (response) => {
+              if (chrome.runtime && chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+              } else if (response.error) {
+                reject(new Error(response.error));
+              } else {
+                resolve();
+              }
             }
-          }
-        );
+          );
+        } else {
+          reject(new Error('Chrome API not available'));
+        }
       });
     } catch (error) {
       console.error(`Error replacing text for node ${nodeId}:`, error);

@@ -76,13 +76,15 @@ interface Chrome {
   };
 }
 
-// Define types for Chrome namespace in the global scope
+// Define Chrome namespace globally to make it available everywhere
 declare global {
   interface Window {
     chrome: Chrome;
   }
-  var chrome: Chrome;
+  
+  // This is the key part - declare chrome as a global variable
+  const chrome: Chrome;
 }
 
-// This ensures the file is treated as a module
+// Export an empty object to make this file a module
 export {};

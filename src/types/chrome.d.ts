@@ -1,6 +1,5 @@
 
 // Type definitions for Chrome extension API
-// These types augment the existing Chrome API types
 
 interface Chrome {
   runtime: {
@@ -77,7 +76,7 @@ interface Chrome {
   };
 }
 
-// Define Tab interface explicitly
+// Define Tab interface explicitly and make it available globally
 interface Tab {
   id?: number;
   url?: string;

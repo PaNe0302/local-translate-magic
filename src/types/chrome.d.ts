@@ -30,7 +30,7 @@ interface Chrome {
         active?: boolean;
         currentWindow?: boolean;
       },
-      callback: (tabs: chrome.tabs.Tab[]) => void
+      callback: (tabs: Tab[]) => void
     ) => void;
     sendMessage: (
       tabId: number,
@@ -77,33 +77,31 @@ interface Chrome {
   };
 }
 
-// Define Tab interface explicitly to address missing Tab type
-declare namespace chrome.tabs {
-  interface Tab {
-    id?: number;
-    url?: string;
-    title?: string;
-    active: boolean;
-    index: number;
-    windowId: number;
-    highlighted: boolean;
-    incognito: boolean;
-    selected: boolean;
-    pinned: boolean;
-    audible?: boolean;
-    discarded: boolean;
-    autoDiscardable: boolean;
-    mutedInfo?: {
-      muted: boolean;
-    };
-    favIconUrl?: string;
-    status?: string;
-    width?: number;
-    height?: number;
-  }
+// Define Tab interface explicitly
+interface Tab {
+  id?: number;
+  url?: string;
+  title?: string;
+  active: boolean;
+  index: number;
+  windowId: number;
+  highlighted: boolean;
+  incognito: boolean;
+  selected: boolean;
+  pinned: boolean;
+  audible?: boolean;
+  discarded: boolean;
+  autoDiscardable: boolean;
+  mutedInfo?: {
+    muted: boolean;
+  };
+  favIconUrl?: string;
+  status?: string;
+  width?: number;
+  height?: number;
 }
 
-// Declare the chrome variable globally
+// Now correctly declare the chrome variable globally
 declare global {
   interface Window {
     chrome: Chrome;

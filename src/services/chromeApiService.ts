@@ -2,8 +2,6 @@
 /**
  * Service for interacting with the Chrome extension API
  */
-// This is necessary to ensure TypeScript recognizes the chrome namespace
-/// <reference path="../types/chrome.d.ts" />
 
 interface ChromeApiOptions {
   timeout?: number;
@@ -26,7 +24,7 @@ class ChromeApiService {
   /**
    * Gets the active tab
    */
-  public async getActiveTab(): Promise<chrome.tabs.Tab> {
+  public async getActiveTab(): Promise<Tab> {
     if (!this.isAvailable()) {
       throw new Error('Chrome API not available');
     }

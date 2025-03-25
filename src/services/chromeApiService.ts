@@ -3,6 +3,9 @@
  * Service for interacting with the Chrome extension API
  */
 
+// Import the Tab interface from our type definitions
+/// <reference types="../types/chrome.d.ts" />
+
 interface ChromeApiOptions {
   timeout?: number;
 }

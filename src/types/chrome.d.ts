@@ -77,6 +77,9 @@ interface Chrome {
 }
 
 declare global {
+  interface Window {
+    chrome: Chrome;
+  }
   const chrome: Chrome;
 }
 

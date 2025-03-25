@@ -2,6 +2,9 @@
 import { toast } from 'sonner';
 import { translationApi } from './translationApi';
 
+// This is added to ensure TypeScript recognizes the chrome namespace
+/// <reference path="../types/chrome.d.ts" />
+
 interface TextNode {
   id: string;
   text: string;

@@ -8,6 +8,13 @@
  */
 async function injectContentScript(tabId) {
   try {
+    // First check if we can access the tab
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) {
+      console.log('Cannot inject content script into this tab type');
+      return false;
+    }
+
     // First attempt to ping content script to see if it's already loaded
     try {
       const pingResponse = await sendPingToContentScript(tabId);
@@ -20,7 +27,8 @@ async function injectContentScript(tabId) {
     // If ping fails, inject the content script
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['content.js']
+      files: ['content.js'],
+      world: 'MAIN' // This ensures the script runs in the main world context
     });
     
     console.log('Content script injected successfully into tab:', tabId);

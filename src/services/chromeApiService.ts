@@ -3,7 +3,6 @@
  * Service for interacting with the Chrome extension API
  */
 // This is necessary to ensure TypeScript recognizes the chrome namespace
-/// <reference types="chrome" />
 /// <reference path="../types/chrome.d.ts" />
 
 interface ChromeApiOptions {

@@ -30,7 +30,7 @@ interface Chrome {
         active?: boolean;
         currentWindow?: boolean;
       },
-      callback: (tabs: any[]) => void
+      callback: (tabs: chrome.tabs.Tab[]) => void
     ) => void;
     sendMessage: (
       tabId: number,
@@ -75,6 +75,32 @@ interface Chrome {
       remove: (keys: string | string[], callback?: () => void) => void;
     };
   };
+}
+
+// Define Tab interface explicitly to address missing Tab type
+declare namespace chrome.tabs {
+  interface Tab {
+    id?: number;
+    url?: string;
+    title?: string;
+    active: boolean;
+    index: number;
+    windowId: number;
+    highlighted: boolean;
+    incognito: boolean;
+    selected: boolean;
+    pinned: boolean;
+    audible?: boolean;
+    discarded: boolean;
+    autoDiscardable: boolean;
+    mutedInfo?: {
+      muted: boolean;
+    };
+    favIconUrl?: string;
+    status?: string;
+    width?: number;
+    height?: number;
+  }
 }
 
 declare global {

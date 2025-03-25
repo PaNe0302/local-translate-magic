@@ -103,7 +103,11 @@ declare namespace chrome.tabs {
   }
 }
 
+// Declare the chrome variable globally
 declare global {
+  interface Window {
+    chrome: Chrome;
+  }
   var chrome: Chrome;
 }
 

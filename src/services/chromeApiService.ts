@@ -4,7 +4,7 @@
  */
 
 // Import the Tab interface from our type definitions
-/// <reference path="../types/chrome.d.ts" />
+import type { Tab } from '../types/chrome.d.ts';
 
 interface ChromeApiOptions {
   timeout?: number;

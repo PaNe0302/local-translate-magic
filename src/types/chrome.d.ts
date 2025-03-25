@@ -108,4 +108,4 @@ declare global {
   var chrome: Chrome;
 }
 
-export {};
+export type { Tab }; // Export the Tab interface explicitly

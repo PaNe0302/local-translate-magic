@@ -2,7 +2,7 @@
 import { toast } from 'sonner';
 import { translationApi } from './translationApi';
 
-// This is added to ensure TypeScript recognizes the chrome namespace
+// This is necessary to ensure TypeScript recognizes the chrome namespace
 /// <reference path="../types/chrome.d.ts" />
 
 interface TextNode {
@@ -116,9 +116,13 @@ class PageTranslationService {
     try {
       // Get the active tab
       const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          resolve(tabs);
-        });
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            resolve(tabs);
+          });
+        } else {
+          resolve([]);
+        }
       });
       
       if (!tabs || tabs.length === 0 || !tabs[0].id) {
@@ -163,9 +167,13 @@ class PageTranslationService {
     try {
       // Get the active tab
       const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          resolve(tabs);
-        });
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            resolve(tabs);
+          });
+        } else {
+          resolve([]);
+        }
       });
       
       if (!tabs || tabs.length === 0 || !tabs[0].id) {
@@ -217,9 +225,13 @@ class PageTranslationService {
     try {
       // Get the active tab
       const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          resolve(tabs);
-        });
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            resolve(tabs);
+          });
+        } else {
+          resolve([]);
+        }
       });
       
       if (!tabs || tabs.length === 0 || !tabs[0].id) {

@@ -11,7 +11,7 @@ interface Chrome {
       addListener: (
         callback: (
           message: any,
-          sender: chrome.runtime.MessageSender,
+          sender: any,
           sendResponse: (response?: any) => void
         ) => boolean | void
       ) => void;
@@ -30,7 +30,7 @@ interface Chrome {
         active?: boolean;
         currentWindow?: boolean;
       },
-      callback: (tabs: chrome.tabs.Tab[]) => void
+      callback: (tabs: any[]) => void
     ) => void;
     sendMessage: (
       tabId: number,
@@ -62,7 +62,7 @@ interface Chrome {
             menuItemId: string;
             selectionText?: string;
           },
-          tab?: chrome.tabs.Tab
+          tab?: any
         ) => void
       ) => void;
     };
@@ -76,15 +76,8 @@ interface Chrome {
   };
 }
 
-// Define Chrome namespace globally to make it available everywhere
 declare global {
-  interface Window {
-    chrome: Chrome;
-  }
-  
-  // This is the key part - declare chrome as a global variable
   const chrome: Chrome;
 }
 
-// Export an empty object to make this file a module
 export {};

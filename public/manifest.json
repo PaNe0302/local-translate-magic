@@ -42,7 +42,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["*.png", "content/*.js"],
+      "resources": ["*.png", "content/*.js", "background/*.js"],
       "matches": ["<all_urls>"]
     }
   ],

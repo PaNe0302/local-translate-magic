@@ -1,10 +1,11 @@
 
 // Message Handler for LocalTranslate background script
+import { ensureContentScript, getPageContent } from './contentInjectionHandler.js';
 
 /**
  * Sets up message listeners for the background script
  */
-function setupMessageListeners() {
+export function setupMessageListeners() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background script received message:", request ? request.action : "undefined message");
     
@@ -69,31 +70,23 @@ async function handleTranslatePageRequest(request, sendResponse) {
       
       const tabId = tabs[0].id;
       
-      // First ensure the content script is loaded
       try {
+        // Ensure content script is injected
         await ensureContentScript(tabId);
         
-        // Send the getPageContent message to the tab
-        chrome.tabs.sendMessage(tabId, { action: "getPageContent" }, response => {
-          if (chrome.runtime.lastError) {
-            console.error('Message sending error:', chrome.runtime.lastError);
-            sendResponse({ 
-              error: chrome.runtime.lastError.message,
-              details: "Could not communicate with the page. This might be due to security restrictions.",
-              status: "error"
-            });
-          } else {
-            // Pass the response back to whoever requested the translation
-            sendResponse(response || { 
-              error: 'No response received from content script',
-              status: "error"
-            });
-          }
-        });
-      } catch (error) {
-        console.error('Error injecting or communicating with content script:', error);
-        sendResponse({
-          error: error.message || 'Failed to inject content script',
+        // Get page content
+        try {
+          const content = await getPageContent(tabId);
+          sendResponse(content);
+        } catch (contentError) {
+          sendResponse({ 
+            error: contentError.message,
+            status: "error"
+          });
+        }
+      } catch (injectionError) {
+        sendResponse({ 
+          error: injectionError.message,
           status: "error"
         });
       }
@@ -137,68 +130,3 @@ function handleTranslateSelectionRequest(request, sendResponse) {
     });
   }
 }
-
-/**
- * Injects the content script into a tab
- * @param {number} tabId - The ID of the tab to inject the script into
- * @returns {Promise<boolean>} - Whether the injection was successful
- */
-async function ensureContentScript(tabId) {
-  return new Promise((resolve, reject) => {
-    // First try to ping the content script to see if it's already loaded
-    chrome.tabs.sendMessage(tabId, { action: 'ping' }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.log('Content script not detected, will inject...', chrome.runtime.lastError);
-        
-        // Check if we can inject into this tab
-        chrome.tabs.get(tabId, (tab) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(`Cannot access tab: ${chrome.runtime.lastError.message}`));
-            return;
-          }
-          
-          if (!tab.url) {
-            reject(new Error('Tab has no URL'));
-            return;
-          }
-          
-          // Check if the URL is restricted
-          if (tab.url.startsWith('chrome://') || 
-              tab.url.startsWith('edge://') || 
-              tab.url.startsWith('brave://') ||
-              tab.url.startsWith('about:') || 
-              tab.url.startsWith('chrome-extension://') ||
-              tab.url.startsWith('moz-extension://')) {
-            reject(new Error(`Cannot inject into restricted URL: ${tab.url}`));
-            return;
-          }
-          
-          // Execute content script injection
-          chrome.scripting.executeScript({
-            target: { tabId },
-            files: ['content.js']
-          }, (injectionResults) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(`Injection failed: ${chrome.runtime.lastError.message}`));
-            } else {
-              console.log('Content script injected into tab:', tabId);
-              resolve(true);
-            }
-          });
-        });
-      } else if (response && response.status === 'alive') {
-        console.log('Content script already loaded in tab:', tabId);
-        resolve(true);
-      } else {
-        reject(new Error('Content script not responding correctly'));
-      }
-    });
-  });
-}
-
-export {
-  setupMessageListeners,
-  handleTranslatePageRequest,
-  handleTranslateSelectionRequest,
-  ensureContentScript
-};

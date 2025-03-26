@@ -4,26 +4,30 @@
 /**
  * Sets up context menu items for the extension
  */
-function setupContextMenus() {
-  // Create context menu item for selected text
-  chrome.contextMenus.create({
-    id: "translate-selection",
-    title: "Translate selection with LocalTranslate",
-    contexts: ["selection"]
-  });
-  
-  // Create context menu item for translating the page
-  chrome.contextMenus.create({
-    id: "translate-page",
-    title: "Translate this page with LocalTranslate",
-    contexts: ["page"]
-  });
+export function setupContextMenus() {
+  try {
+    // Create context menu item for selected text
+    chrome.contextMenus.create({
+      id: "translate-selection",
+      title: "Translate selection with LocalTranslate",
+      contexts: ["selection"]
+    });
+    
+    // Create context menu item for translating the page
+    chrome.contextMenus.create({
+      id: "translate-page",
+      title: "Translate this page with LocalTranslate",
+      contexts: ["page"]
+    });
+  } catch (error) {
+    console.error("Error setting up context menus:", error);
+  }
 }
 
 /**
  * Handle clicks on context menu items
  */
-function handleContextMenuClick(info, tab) {
+export function handleContextMenuClick(info, tab) {
   if (info.menuItemId === "translate-selection" && info.selectionText) {
     // Send the selected text to the popup for translation
     chrome.runtime.sendMessage({
@@ -37,8 +41,3 @@ function handleContextMenuClick(info, tab) {
     });
   }
 }
-
-export {
-  setupContextMenus,
-  handleContextMenuClick
-};

@@ -19,18 +19,20 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/index.html" element={<Navigate to="/" replace />} />
-          <Route path="/popup.html" element={<Navigate to="/" replace />} />
-          <Route path="/options.html" element={<Navigate to="/" replace />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THIS LINE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <div className="extension-container">
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/index.html" element={<Navigate to="/" replace />} />
+            <Route path="/popup.html" element={<Navigate to="/" replace />} />
+            <Route path="/options.html" element={<Navigate to="/" replace />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THIS LINE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </div>
     </TooltipProvider>
   </QueryClientProvider>
 );

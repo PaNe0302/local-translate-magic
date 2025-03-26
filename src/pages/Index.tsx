@@ -21,8 +21,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-background">
-      <div className="w-full max-w-md p-4 space-y-4">
+    <div className="extension-wrapper bg-background">
+      <div className="extension-content w-full max-w-md p-4 space-y-4">
         <Header isConnected={isConnected} />
         
         <motion.div

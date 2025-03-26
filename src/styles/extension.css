@@ -1,0 +1,99 @@
+
+/* Extension specific styles */
+.extension-container {
+  width: 400px;
+  min-height: 580px;
+  max-height: 600px;
+  overflow: hidden;
+  background-color: hsl(var(--background));
+}
+
+.extension-wrapper {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.extension-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.extension-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.extension-wrapper::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 6px;
+}
+
+.extension-content {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fixing dialog positioning in extension context */
+.extension-container .dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Subtle scrollbar for textareas */
+.subtle-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.subtle-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.subtle-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 6px;
+}
+
+/* Glass panel styling */
+.glass-panel {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Neo button styling */
+.neo-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.neo-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.neo-button:hover::after {
+  transform: translateX(100%);
+}
+
+/* Premium text input styling */
+.premium-text-input {
+  border-color: hsl(var(--border));
+  transition: all 0.2s ease;
+}
+
+.premium-text-input:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsla(var(--primary), 0.2);
+}

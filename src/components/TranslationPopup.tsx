@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -59,7 +60,7 @@ const TranslationPopup: React.FC = () => {
 
   return (
     <motion.div 
-      className="glass-panel rounded-xl p-4 w-full max-w-md"
+      className="glass-panel rounded-xl p-4 w-full"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
@@ -96,7 +97,7 @@ const TranslationPopup: React.FC = () => {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to translate..."
-          className="premium-text-input min-h-[100px] resize-none subtle-scrollbar"
+          className="premium-text-input min-h-[100px] max-h-[150px] resize-none subtle-scrollbar"
         />
         
         <Button
@@ -138,7 +139,9 @@ const TranslationPopup: React.FC = () => {
                     {showResult ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-sm">{translatedText}</p>
+                <ScrollArea className="h-[120px]">
+                  <p className="text-sm px-1">{translatedText}</p>
+                </ScrollArea>
               </div>
             </motion.div>
           )}

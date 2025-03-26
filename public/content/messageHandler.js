@@ -53,9 +53,7 @@ function setupMessageListeners() {
   safePostMessage({ action: 'pageScriptReady' });
 }
 
-// Export functions for use in other modules
-// These can be used directly in the page context
-// but we use module pattern for cleaner code organization
+// Export functions for use in other scripts
 window.LocalTranslate = window.LocalTranslate || {};
 window.LocalTranslate.messageHandler = {
   sendPingToExtension: sendPingToExtension,

@@ -16,6 +16,22 @@ function setupMessageListeners() {
       return true;
     }
     
+    // Handle page script ready notification
+    if (request.action === "pageScriptReady") {
+      console.log("Page script is ready");
+      sendResponse({ status: "acknowledged" });
+      return true;
+    }
+    
+    // Handle responses from the page script
+    if (request.action === "getPageContentResponse" || 
+        request.action === "replaceTextResponse" || 
+        request.action === "restoreOriginalResponse") {
+      // Just pass these back to whoever requested them
+      sendResponse(request);
+      return true;
+    }
+    
     // Handle translate page request from popup
     if (request.action === "translatePage") {
       handleTranslatePageRequest(request, sendResponse);
@@ -58,6 +74,14 @@ async function handleTranslatePageRequest(request, sendResponse) {
       // First ensure the content script is loaded
       const injected = await injectContentScript(tabId);
       
+      if (!injected) {
+        sendResponse({ 
+          error: 'Failed to inject content script into the page',
+          details: "The page may be protected or use a restricted URL scheme."
+        });
+        return;
+      }
+      
       // Give the content script a moment to initialize
       setTimeout(() => {
         chrome.tabs.sendMessage(tabId, { action: "getPageContent" }, response => {
@@ -72,7 +96,7 @@ async function handleTranslatePageRequest(request, sendResponse) {
             sendResponse(response);
           }
         });
-      }, 500);
+      }, 1000);
     } else {
       sendResponse({ error: 'No active tab found' });
     }

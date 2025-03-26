@@ -10,8 +10,8 @@ async function injectContentScript(tabId) {
   try {
     // First check if we can access the tab
     const tab = await chrome.tabs.get(tabId);
-    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) {
-      console.log('Cannot inject content script into this tab type');
+    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+      console.log('Cannot inject content script into this tab type:', tab.url);
       return false;
     }
 
@@ -21,7 +21,7 @@ async function injectContentScript(tabId) {
       console.log('Content script already loaded in tab:', tabId);
       return true;
     } catch (pingError) {
-      console.log('Content script not detected, injecting...');
+      console.log('Content script not detected, injecting...', pingError);
     }
     
     // If ping fails, inject the content script
@@ -34,9 +34,17 @@ async function injectContentScript(tabId) {
     console.log('Content script injected successfully into tab:', tabId);
     
     // Give the content script time to initialize
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    return true;
+    // Verify the content script is now loaded
+    try {
+      await sendPingToContentScript(tabId);
+      console.log('Content script verified as working in tab:', tabId);
+      return true;
+    } catch (verifyError) {
+      console.error('Content script injection failed verification:', verifyError);
+      return false;
+    }
   } catch (error) {
     console.error('Failed to inject content script:', error);
     return false;
@@ -52,7 +60,7 @@ function sendPingToContentScript(tabId) {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error('Content script ping timed out'));
-    }, 500);
+    }, 2000); // Increased timeout for reliability
     
     chrome.tabs.sendMessage(tabId, { action: 'ping' }, (response) => {
       clearTimeout(timeoutId);

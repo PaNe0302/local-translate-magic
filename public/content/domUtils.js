@@ -1,14 +1,13 @@
 
 // DOM Utilities for LocalTranslate
 
+import { originalNodes, translatedNodes, nodeCounter, setAlreadyInjected, getAlreadyInjected } from './stateManager.js';
+
 // Helper function to get all text nodes in the document
 function getTextNodes() {
   console.log("Getting text nodes from page...");
   
   try {
-    // Ensure styles are injected before proceeding
-    injectStyles();
-    
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -51,11 +50,12 @@ function getTextNodes() {
 
     const textNodes = [];
     let node;
+    let localNodeCounter = nodeCounter;
     
     while ((node = walker.nextNode())) {
       // Only include nodes with meaningful content
       if (node.textContent.trim().length > 0) {
-        const nodeId = `ln-${nodeCounter++}`;
+        const nodeId = `ln-${localNodeCounter++}`;
         
         // Check if content is already likely to be translated
         const isAlreadyTranslated = translatedNodes.has(nodeId);
@@ -106,8 +106,8 @@ function removeHighlight(node) {
 }
 
 // Function to safely inject styles and track injection status
-function injectStyles() {
-  if (alreadyInjected) return;
+async function injectStyles() {
+  if (getAlreadyInjected()) return;
   
   try {
     // Add a custom style for translated elements
@@ -125,10 +125,12 @@ function injectStyles() {
     `;
     document.head.appendChild(style);
     
-    alreadyInjected = true;
-    console.log("LocalTranslate content script loaded and styles injected");
+    setAlreadyInjected(true);
+    console.log("LocalTranslate styles injected successfully");
+    return true;
   } catch (error) {
     console.error("Failed to inject styles:", error);
+    return false;
   }
 }
 

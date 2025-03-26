@@ -1,17 +1,49 @@
 
 // Message Handler for LocalTranslate
 
-// This file is no longer needed in the same form as we're using a different approach
-// These functions are kept for reference but are implemented differently in pageScript.js
-
-// Placeholder function for backward compatibility
+// Legacy functions kept for reference but reimplemented in content.js
 function sendPingToExtension() {
-  console.log("sendPingToExtension is now handled by content.js");
+  if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+    chrome.runtime.sendMessage({ action: 'ping' }, function(response) {
+      console.log('Ping response:', response);
+    });
+  } else {
+    // For page context, use postMessage
+    window.postMessage({
+      type: 'FROM_PAGE_SCRIPT',
+      message: { action: 'ping' }
+    }, '*');
+  }
 }
 
-// Placeholder function for backward compatibility
 function setupMessageListeners() {
-  console.log("setupMessageListeners is now handled by content.js");
+  // Listen for messages from the content script
+  window.addEventListener('message', function(event) {
+    // Only accept messages from the same frame
+    if (event.source !== window) return;
+    
+    // Check if this is our message
+    if (event.data && event.data.type === 'FROM_CONTENT_SCRIPT') {
+      console.log('Page script received message from content script:', event.data);
+      
+      // Process message here
+      
+      // Example response
+      window.postMessage({
+        type: 'FROM_PAGE_SCRIPT',
+        message: { 
+          action: 'responseFromPage',
+          data: 'Message received by page script' 
+        }
+      }, '*');
+    }
+  });
+  
+  // Notify that the page script is ready
+  window.postMessage({
+    type: 'FROM_PAGE_SCRIPT',
+    message: { action: 'pageScriptReady' }
+  }, '*');
 }
 
 export {

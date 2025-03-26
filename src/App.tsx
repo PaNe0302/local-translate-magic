@@ -25,6 +25,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />
+          <Route path="/popup.html" element={<Navigate to="/" replace />} />
+          <Route path="/options.html" element={<Navigate to="/" replace />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THIS LINE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

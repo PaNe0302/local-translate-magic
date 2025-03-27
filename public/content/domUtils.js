@@ -106,8 +106,8 @@ function removeHighlight(node) {
 }
 
 // Function to safely inject styles and track injection status
-async function injectStyles() {
-  if (getAlreadyInjected()) return;
+function injectStyles() {
+  if (getAlreadyInjected()) return true;
   
   try {
     // Add a custom style for translated elements

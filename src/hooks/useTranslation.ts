@@ -12,6 +12,7 @@ interface TranslationHook {
   translationHistory: TranslationHistoryItem[];
   translateText: (text: string, toLang: string) => Promise<void>;
   translatePage: () => Promise<void>;
+  cancelTranslation: () => void;
   clearTranslation: () => void;
   removeHistoryItem: (id: string) => void;
   clearHistory: () => void;
@@ -34,6 +35,7 @@ export const useTranslation = (): TranslationHook => {
     return savedLang || 'vi';
   });
 
+  // Debounced connection check to avoid too many requests
   const checkConnection = useCallback(async (): Promise<boolean> => {
     const result = await translationApi.checkHealth();
     setIsConnected(result.connected);
@@ -50,6 +52,41 @@ export const useTranslation = (): TranslationHook => {
     
     // Initial connection check
     checkConnection();
+
+    // Set up periodic connection checks, but only when the app is active
+    let checkInterval: number | null = null;
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Check connection when tab becomes visible
+        checkConnection();
+        // Start interval checks when visible
+        if (checkInterval === null) {
+          checkInterval = window.setInterval(checkConnection, 30000);
+        }
+      } else if (document.visibilityState === 'hidden') {
+        // Clear interval when tab is hidden
+        if (checkInterval !== null) {
+          window.clearInterval(checkInterval);
+          checkInterval = null;
+        }
+      }
+    };
+    
+    // Set up visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Initialize interval if page is visible
+    if (document.visibilityState === 'visible') {
+      checkInterval = window.setInterval(checkConnection, 30000);
+    }
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (checkInterval !== null) {
+        window.clearInterval(checkInterval);
+      }
+    };
   }, [checkConnection]);
 
   // Save target language to localStorage when it changes
@@ -105,6 +142,11 @@ export const useTranslation = (): TranslationHook => {
     setIsTranslating(false);
   }, []);
 
+  const cancelTranslation = useCallback((): void => {
+    pageTranslationService.cancelTranslation();
+    setIsTranslating(false);
+  }, []);
+
   const clearTranslation = useCallback((): void => {
     setTranslatedText(null);
   }, []);
@@ -123,6 +165,7 @@ export const useTranslation = (): TranslationHook => {
     translationHistory,
     translateText,
     translatePage,
+    cancelTranslation,
     clearTranslation,
     removeHistoryItem,
     clearHistory,

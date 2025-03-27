@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, ArrowRight } from 'lucide-react';
+import { Globe, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import Header from '@/components/Header';
@@ -10,7 +10,7 @@ import TranslationHistory from '@/components/TranslationHistory';
 import TranslationSettings from '@/components/TranslationSettings';
 
 const Index = () => {
-  const { translatePage, isTranslating, isConnected, checkConnection, targetLanguage } = useTranslation();
+  const { translatePage, cancelTranslation, isTranslating, isConnected, checkConnection, targetLanguage } = useTranslation();
 
   useEffect(() => {
     checkConnection();
@@ -18,6 +18,10 @@ const Index = () => {
 
   const handleTranslatePage = async () => {
     await translatePage();
+  };
+
+  const handleCancelTranslation = () => {
+    cancelTranslation();
   };
 
   return (
@@ -64,20 +68,24 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Button 
-            className="w-full neo-button flex items-center justify-center gap-2 py-6 text-base"
-            onClick={handleTranslatePage}
-            disabled={isTranslating || !isConnected}
-          >
-            {isTranslating ? (
-              <span>Translating Page...</span>
-            ) : (
-              <>
-                <span>Translate Current Page</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+          {isTranslating ? (
+            <Button 
+              className="w-full neo-button bg-red-500 hover:bg-red-600 flex items-center justify-center gap-2 py-6 text-base"
+              onClick={handleCancelTranslation}
+            >
+              <X className="h-4 w-4" />
+              <span>Cancel Translation</span>
+            </Button>
+          ) : (
+            <Button 
+              className="w-full neo-button flex items-center justify-center gap-2 py-6 text-base"
+              onClick={handleTranslatePage}
+              disabled={!isConnected}
+            >
+              <span>Translate Current Page</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
         </motion.div>
         
         <TranslationPopup />

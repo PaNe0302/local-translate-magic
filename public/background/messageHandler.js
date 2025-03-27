@@ -1,7 +1,12 @@
 
 // Message Handler for LocalTranslate background script
 import { handlePingRequest, handleContentScriptReadyNotification } from './pingHandler.js';
-import { handleTranslatePageRequest, handleTranslateSelectionRequest } from './translationHandler.js';
+import { 
+  handleTranslatePageRequest, 
+  handleTranslateSelectionRequest,
+  handleStartBackgroundTranslation,
+  handleCancelTranslation 
+} from './translationHandler.js';
 
 /**
  * Sets up message listeners for the background script
@@ -32,6 +37,19 @@ export function setupMessageListeners() {
     if (request.action === "translatePage") {
       handleTranslatePageRequest(request, sendResponse);
       return true; // Keep the message channel open for the async response
+    }
+    
+    // Handle start background translation request
+    if (request.action === "startBackgroundTranslation") {
+      handleStartBackgroundTranslation(request, sendResponse);
+      return true;
+    }
+    
+    // Handle cancel translation request
+    if (request.action === "cancelTranslation") {
+      handleCancelTranslation();
+      sendResponse({ status: "cancelled" });
+      return true;
     }
     
     // Handle translate selection request from context menu

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,61 @@ import Header from '@/components/Header';
 import TranslationPopup from '@/components/TranslationPopup';
 import TranslationHistory from '@/components/TranslationHistory';
 import TranslationSettings from '@/components/TranslationSettings';
+import { toast } from 'sonner';
 
 const Index = () => {
-  const { translatePage, cancelTranslation, isTranslating, isConnected, checkConnection, targetLanguage } = useTranslation();
+  const { 
+    translatePage, 
+    cancelTranslation, 
+    isTranslating, 
+    isConnected, 
+    checkConnection, 
+    targetLanguage 
+  } = useTranslation();
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
 
   useEffect(() => {
     checkConnection();
+    
+    // Set up message listener for background translation updates
+    const messageListener = (message) => {
+      if (message.action === 'translationProgress') {
+        setProgress({
+          completed: message.completed,
+          total: message.total
+        });
+        
+        // Show toast notification for progress
+        if (message.completed % 10 === 0 || message.completed === message.total) {
+          toast.info(`Translation progress: ${message.completed} of ${message.total} elements`);
+        }
+      } else if (message.action === 'translationComplete') {
+        setProgress({ completed: 0, total: 0 });
+        if (message.failed > 0) {
+          toast.warning(`Translation completed with ${message.failed} errors`);
+        } else {
+          toast.success(`Translation completed successfully`);
+        }
+      } else if (message.action === 'translationError') {
+        setProgress({ completed: 0, total: 0 });
+        toast.error(`Translation error: ${message.error}`);
+      } else if (message.action === 'translationCancelled') {
+        setProgress({ completed: 0, total: 0 });
+        toast.info('Translation cancelled');
+      }
+    };
+    
+    // Add the listener
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.onMessage.addListener(messageListener);
+    }
+    
+    // Clean up
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.onMessage.removeListener(messageListener);
+      }
+    };
   }, [checkConnection]);
 
   const handleTranslatePage = async () => {
@@ -68,14 +117,24 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          {isTranslating ? (
-            <Button 
-              className="w-full neo-button bg-red-500 hover:bg-red-600 flex items-center justify-center gap-2 py-6 text-base"
-              onClick={handleCancelTranslation}
-            >
-              <X className="h-4 w-4" />
-              <span>Cancel Translation</span>
-            </Button>
+          {isTranslating || progress.total > 0 ? (
+            <div className="space-y-2">
+              {progress.total > 0 && (
+                <div className="w-full bg-muted rounded-full h-2.5 mb-2">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${Math.floor((progress.completed / progress.total) * 100)}%` }}
+                  ></div>
+                </div>
+              )}
+              <Button 
+                className="w-full neo-button bg-red-500 hover:bg-red-600 flex items-center justify-center gap-2 py-6 text-base"
+                onClick={handleCancelTranslation}
+              >
+                <X className="h-4 w-4" />
+                <span>Cancel Translation</span>
+              </Button>
+            </div>
           ) : (
             <Button 
               className="w-full neo-button flex items-center justify-center gap-2 py-6 text-base"

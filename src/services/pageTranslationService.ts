@@ -5,6 +5,7 @@
 import { toast } from 'sonner';
 import { translationApi } from './translationApi';
 import { pageContentService, TextNode } from './pageContentService';
+import { chromeApiService } from './chromeApiService';
 
 class PageTranslationService {
   private isTranslating: boolean = false;
@@ -34,6 +35,29 @@ class PageTranslationService {
         return;
       }
       
+      // Start the background translation process
+      await this.startBackgroundTranslation();
+      
+      toast.info(`Translation started in background to ${this.getLanguageName(this.targetLanguage)}...`);
+      
+    } catch (error) {
+      console.error('Page translation error:', error);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Translation was cancelled');
+      } else {
+        toast.error('Failed to translate page: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    } finally {
+      this.isTranslating = false;
+      this.abortController = null;
+    }
+  }
+
+  /**
+   * Starts a background translation process that continues even when popup is hidden
+   */
+  private async startBackgroundTranslation(): Promise<void> {
+    try {
       // Get text nodes from the active tab
       const textNodes = await pageContentService.getPageContent();
       
@@ -54,28 +78,24 @@ class PageTranslationService {
         return;
       }
       
-      toast.info(`Translating ${filteredNodes.length} elements on the page to ${this.getLanguageName(this.targetLanguage)}...`);
-      
-      // Process nodes in parallel with optimized batch size
-      await this.processBatchTranslation(filteredNodes);
+      // Send the translation request to the background script
+      await chromeApiService.sendBackgroundMessage({
+        action: 'startBackgroundTranslation',
+        nodes: filteredNodes,
+        targetLanguage: this.targetLanguage
+      });
       
     } catch (error) {
-      console.error('Page translation error:', error);
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        toast.error('Translation was cancelled');
-      } else {
-        toast.error('Failed to translate page: ' + (error instanceof Error ? error.message : String(error)));
-      }
-    } finally {
-      this.isTranslating = false;
-      this.abortController = null;
+      console.error('Error starting background translation:', error);
+      throw error;
     }
   }
   
   /**
    * Process batch translation of text nodes with optimized concurrency
+   * This method is called from the background script
    */
-  private async processBatchTranslation(textNodes: TextNode[]): Promise<void> {
+  async processBatchTranslation(textNodes: TextNode[]): Promise<void> {
     // Increase batch size for better performance
     const batchSize = 10;
     // Optimize concurrency - don't process too many requests at once
@@ -116,6 +136,15 @@ class PageTranslationService {
               if (response.translatedText) {
                 await pageContentService.replaceText(node.id, response.translatedText);
                 completedCount++;
+                
+                // Update progress in a non-blocking way
+                if (completedCount % 5 === 0 || completedCount === textNodes.length) {
+                  chromeApiService.sendBackgroundMessage({
+                    action: 'translationProgress',
+                    completed: completedCount,
+                    total: textNodes.length
+                  }).catch(err => console.error('Failed to send progress update:', err));
+                }
               } else {
                 failedCount++;
               }
@@ -129,19 +158,15 @@ class PageTranslationService {
           // Wait for concurrent batch to complete before starting next
           await Promise.all(promises);
         }
-        
-        // Update progress every 20 nodes
-        if ((i + batchSize) % 20 === 0 || i + batchSize >= group.length) {
-          toast.info(`Translation progress: ${completedCount} of ${textNodes.length} elements`);
-        }
       }
     }
     
-    if (failedCount > 0) {
-      toast.warning(`Translation completed with ${failedCount} errors`);
-    } else {
-      toast.success(`Translation to ${this.getLanguageName(this.targetLanguage)} completed successfully`);
-    }
+    // Send final status to update the UI
+    chromeApiService.sendBackgroundMessage({
+      action: 'translationComplete',
+      failedCount,
+      targetLanguage: this.targetLanguage
+    }).catch(err => console.error('Failed to send completion status:', err));
   }
   
   /**
@@ -176,6 +201,12 @@ class PageTranslationService {
     if (this.isTranslating && this.abortController) {
       this.abortController.abort();
       this.isTranslating = false;
+      
+      // Notify background script to cancel translation
+      chromeApiService.sendBackgroundMessage({
+        action: 'cancelTranslation'
+      }).catch(err => console.error('Failed to send cancellation message:', err));
+      
       toast.info('Translation cancelled');
     }
   }
@@ -192,6 +223,13 @@ class PageTranslationService {
    */
   setTargetLanguage(languageCode: string): void {
     this.targetLanguage = languageCode;
+  }
+
+  /**
+   * Gets the target language code
+   */
+  getTargetLanguage(): string {
+    return this.targetLanguage;
   }
 
   /**

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RefreshCw, AlertCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +9,31 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { toast } from 'sonner';
 import { translationApi } from '@/services/translationApi';
 import { ENDPOINTS } from '@/config/endpoints';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const languages = [
+  { code: 'en', name: 'English' },
+  { code: 'vi', name: 'Vietnamese' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'it', name: 'Italian' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ru', name: 'Russian' },
+];
 
 const TranslationSettings: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [endpoint, setEndpoint] = useState(ENDPOINTS.LM_STUDIO);
-  const { isConnected, connectionError, checkConnection } = useTranslation();
+  const { 
+    isConnected, 
+    connectionError, 
+    checkConnection,
+    targetLanguage,
+    setTargetLanguage
+  } = useTranslation();
   
   // Load the saved endpoint from localStorage on component mount
   useEffect(() => {
@@ -76,6 +96,31 @@ const TranslationSettings: React.FC = () => {
             transition={{ duration: 0.3 }}
             className="mt-4 space-y-4"
           >
+            <div className="space-y-2">
+              <Label htmlFor="target-language">Default Translation Language</Label>
+              <Select
+                value={targetLanguage}
+                onValueChange={setTargetLanguage}
+              >
+                <SelectTrigger id="target-language" className="neo-button w-full">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Select language" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The target language for all translations. This will be used for both text and page translation.
+              </p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="endpoint">LMStudio Endpoint</Label>
               <div className="flex gap-2">

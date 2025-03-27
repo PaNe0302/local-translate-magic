@@ -8,7 +8,7 @@ import { pageContentService, TextNode } from './pageContentService';
 
 class PageTranslationService {
   private isTranslating: boolean = false;
-  private targetLanguage: string = 'en';
+  private targetLanguage: string = 'vi'; // Default to Vietnamese
   
   /**
    * Translates the current active web page
@@ -39,7 +39,7 @@ class PageTranslationService {
         return;
       }
       
-      toast.info(`Translating ${textNodes.length} elements on the page...`);
+      toast.info(`Translating ${textNodes.length} elements on the page to ${this.getLanguageName(this.targetLanguage)}...`);
       
       // Process nodes in batches to avoid overwhelming the API
       await this.processBatchTranslation(textNodes);
@@ -107,7 +107,7 @@ class PageTranslationService {
     if (failedCount > 0) {
       toast.warning(`Translation completed with ${failedCount} errors`);
     } else {
-      toast.success('Translation completed successfully');
+      toast.success(`Translation to ${this.getLanguageName(this.targetLanguage)} completed successfully`);
     }
   }
   
@@ -123,6 +123,26 @@ class PageTranslationService {
    */
   setTargetLanguage(languageCode: string): void {
     this.targetLanguage = languageCode;
+  }
+
+  /**
+   * Gets the target language name from code
+   */
+  private getLanguageName(languageCode: string): string {
+    const languageMap: Record<string, string> = {
+      'en': 'English',
+      'vi': 'Vietnamese',
+      'fr': 'French',
+      'de': 'German',
+      'es': 'Spanish',
+      'it': 'Italian',
+      'ja': 'Japanese',
+      'ko': 'Korean',
+      'zh': 'Chinese',
+      'ru': 'Russian'
+    };
+    
+    return languageMap[languageCode] || languageCode;
   }
 }
 

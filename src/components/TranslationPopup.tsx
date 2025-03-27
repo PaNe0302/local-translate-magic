@@ -23,7 +23,6 @@ const languages = [
 
 const TranslationPopup: React.FC = () => {
   const [text, setText] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('vi');
   const [showResult, setShowResult] = useState(false);
   const { 
     isTranslating, 
@@ -31,7 +30,9 @@ const TranslationPopup: React.FC = () => {
     translateText, 
     clearTranslation, 
     isConnected, 
-    checkConnection 
+    checkConnection,
+    targetLanguage,
+    setTargetLanguage
   } = useTranslation();
 
   useEffect(() => {

@@ -18,6 +18,8 @@ interface TranslationHook {
   isConnected: boolean;
   connectionError: string | null;
   checkConnection: () => Promise<boolean>;
+  targetLanguage: string;
+  setTargetLanguage: (lang: string) => void;
 }
 
 export const useTranslation = (): TranslationHook => {
@@ -26,6 +28,11 @@ export const useTranslation = (): TranslationHook => {
   const [translationHistory, setTranslationHistory] = useState<TranslationHistoryItem[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState<string>(() => {
+    // Try to load from localStorage or default to Vietnamese
+    const savedLang = localStorage.getItem('targetLanguage');
+    return savedLang || 'vi';
+  });
 
   const checkConnection = useCallback(async (): Promise<boolean> => {
     const result = await translationApi.checkHealth();
@@ -44,6 +51,13 @@ export const useTranslation = (): TranslationHook => {
     // Initial connection check
     checkConnection();
   }, [checkConnection]);
+
+  // Save target language to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('targetLanguage', targetLanguage);
+    // Update the target language in the page translation service
+    pageTranslationService.setTargetLanguage(targetLanguage);
+  }, [targetLanguage]);
 
   const translateText = useCallback(async (text: string, toLang: string): Promise<void> => {
     if (!text.trim()) return;
@@ -115,5 +129,7 @@ export const useTranslation = (): TranslationHook => {
     isConnected,
     connectionError,
     checkConnection,
+    targetLanguage,
+    setTargetLanguage,
   };
 };

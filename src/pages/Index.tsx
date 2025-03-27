@@ -10,7 +10,7 @@ import TranslationHistory from '@/components/TranslationHistory';
 import TranslationSettings from '@/components/TranslationSettings';
 
 const Index = () => {
-  const { translatePage, isTranslating, isConnected, checkConnection } = useTranslation();
+  const { translatePage, isTranslating, isConnected, checkConnection, targetLanguage } = useTranslation();
 
   useEffect(() => {
     checkConnection();
@@ -46,7 +46,16 @@ const Index = () => {
           </motion.div>
           <h1 className="text-2xl font-medium">Local Translation</h1>
           <p className="text-muted-foreground mt-1 max-w-sm">
-            Translate web pages using your local LMStudio instance
+            Translate web pages to {targetLanguage === 'vi' ? 'Vietnamese' : 
+              targetLanguage === 'en' ? 'English' : 
+              targetLanguage === 'fr' ? 'French' : 
+              targetLanguage === 'de' ? 'German' : 
+              targetLanguage === 'es' ? 'Spanish' : 
+              targetLanguage === 'it' ? 'Italian' : 
+              targetLanguage === 'ja' ? 'Japanese' : 
+              targetLanguage === 'ko' ? 'Korean' : 
+              targetLanguage === 'zh' ? 'Chinese' : 
+              targetLanguage === 'ru' ? 'Russian' : 'your selected language'} using your local LMStudio instance
           </p>
         </motion.div>
         

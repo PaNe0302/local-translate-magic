@@ -1,30 +1,42 @@
 // State Manager for LocalTranslate
 
 // Keep track of original text nodes to restore later if needed
-let originalNodes = new Map();
-let translatedNodes = new Map();
-let nodeCounter = 0;
+export let originalNodes = new Map();
+export let translatedNodes = new Map();
+export let nodeCounter = 0;
 let isTranslating = false;
 let alreadyInjected = false;
 
-// Reset state
-function reset() {
+/**
+ * Resets the translation state
+ */
+export function reset() {
   nodeCounter = 0;
   originalNodes.clear();
   translatedNodes.clear();
   isTranslating = false;
 }
 
-// Get/set state functions
-function getNodeCounter() {
+/**
+ * Gets the current node counter
+ */
+export function getNodeCounter() {
   return nodeCounter;
 }
 
-function incrementNodeCounter() {
+/**
+ * Increments and returns the node counter
+ */
+export function incrementNodeCounter() {
   return nodeCounter++;
 }
 
-function setIsTranslating(value) {
+/**
+ * Sets the translation state
+ * @param {boolean} value - Whether translation is in progress
+ * @returns {boolean} - Whether the state was successfully set
+ */
+export function setIsTranslating(value) {
   // If already translating and trying to set to true, return false
   if (isTranslating && value === true) {
     return false;
@@ -33,27 +45,23 @@ function setIsTranslating(value) {
   return true;
 }
 
-function getIsTranslating() {
+/**
+ * Gets the current translation state
+ */
+export function getIsTranslating() {
   return isTranslating;
 }
 
-function setAlreadyInjected(value) {
+/**
+ * Sets whether styles have been injected
+ */
+export function setAlreadyInjected(value) {
   alreadyInjected = value;
 }
 
-function getAlreadyInjected() {
+/**
+ * Gets whether styles have been injected
+ */
+export function getAlreadyInjected() {
   return alreadyInjected;
 }
-
-export {
-  originalNodes,
-  translatedNodes,
-  nodeCounter,
-  getNodeCounter,
-  incrementNodeCounter,
-  setIsTranslating,
-  getIsTranslating,
-  setAlreadyInjected,
-  getAlreadyInjected,
-  reset
-};

@@ -1,10 +1,20 @@
 
 // DOM Utilities for LocalTranslate
 
-import { originalNodes, translatedNodes, nodeCounter, setAlreadyInjected, getAlreadyInjected } from './stateManager.js';
+import { 
+  originalNodes, 
+  translatedNodes, 
+  nodeCounter, 
+  setAlreadyInjected, 
+  getAlreadyInjected,
+  incrementNodeCounter
+} from './stateManager.js';
 
-// Helper function to get all text nodes in the document
-function getTextNodes() {
+/**
+ * Gets all text nodes in the document
+ * @returns {Array} - Array of text nodes with their IDs and content
+ */
+export function getTextNodes() {
   console.log("Getting text nodes from page...");
   
   try {
@@ -50,12 +60,11 @@ function getTextNodes() {
 
     const textNodes = [];
     let node;
-    let localNodeCounter = nodeCounter;
     
     while ((node = walker.nextNode())) {
       // Only include nodes with meaningful content
       if (node.textContent.trim().length > 0) {
-        const nodeId = `ln-${localNodeCounter++}`;
+        const nodeId = `ln-${incrementNodeCounter()}`;
         
         // Check if content is already likely to be translated
         const isAlreadyTranslated = translatedNodes.has(nodeId);
@@ -83,8 +92,10 @@ function getTextNodes() {
   }
 }
 
-// Highlight translated elements for better visibility
-function highlightElement(node) {
+/**
+ * Highlight translated elements for better visibility
+ */
+export function highlightElement(node) {
   if (node && node.parentNode) {
     try {
       node.parentNode.classList.add('local-translate-highlight');
@@ -94,8 +105,10 @@ function highlightElement(node) {
   }
 }
 
-// Remove highlight
-function removeHighlight(node) {
+/**
+ * Remove highlight from translated elements
+ */
+export function removeHighlight(node) {
   if (node && node.parentNode) {
     try {
       node.parentNode.classList.remove('local-translate-highlight');
@@ -105,8 +118,10 @@ function removeHighlight(node) {
   }
 }
 
-// Function to safely inject styles and track injection status
-function injectStyles() {
+/**
+ * Function to safely inject styles and track injection status
+ */
+export function injectStyles() {
   if (getAlreadyInjected()) return true;
   
   try {
@@ -133,10 +148,3 @@ function injectStyles() {
     return false;
   }
 }
-
-export { 
-  getTextNodes,
-  highlightElement,
-  removeHighlight,
-  injectStyles
-};

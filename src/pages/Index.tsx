@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,49 +20,45 @@ const Index = () => {
   } = useTranslation();
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
 
+  const handleMessage = useCallback((message) => {
+    if (message.action === 'translationProgress') {
+      setProgress({
+        completed: message.completed,
+        total: message.total
+      });
+      
+      if (message.completed % 10 === 0 || message.completed === message.total) {
+        toast.info(`Translation progress: ${message.completed} of ${message.total} elements`);
+      }
+    } else if (message.action === 'translationComplete') {
+      setProgress({ completed: 0, total: 0 });
+      if (message.failed > 0) {
+        toast.warning(`Translation completed with ${message.failed} errors`);
+      } else {
+        toast.success(`Translation completed successfully`);
+      }
+    } else if (message.action === 'translationError') {
+      setProgress({ completed: 0, total: 0 });
+      toast.error(`Translation error: ${message.error}`);
+    } else if (message.action === 'translationCancelled') {
+      setProgress({ completed: 0, total: 0 });
+      toast.info('Translation cancelled');
+    }
+  }, []);
+
   useEffect(() => {
     checkConnection();
     
-    // Set up message listener for background translation updates
-    const messageListener = (message) => {
-      if (message.action === 'translationProgress') {
-        setProgress({
-          completed: message.completed,
-          total: message.total
-        });
-        
-        // Show toast notification for progress
-        if (message.completed % 10 === 0 || message.completed === message.total) {
-          toast.info(`Translation progress: ${message.completed} of ${message.total} elements`);
-        }
-      } else if (message.action === 'translationComplete') {
-        setProgress({ completed: 0, total: 0 });
-        if (message.failed > 0) {
-          toast.warning(`Translation completed with ${message.failed} errors`);
-        } else {
-          toast.success(`Translation completed successfully`);
-        }
-      } else if (message.action === 'translationError') {
-        setProgress({ completed: 0, total: 0 });
-        toast.error(`Translation error: ${message.error}`);
-      } else if (message.action === 'translationCancelled') {
-        setProgress({ completed: 0, total: 0 });
-        toast.info('Translation cancelled');
-      }
-    };
-    
-    // Add the listener
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.onMessage.addListener(messageListener);
+      chrome.runtime.onMessage.addListener(handleMessage);
     }
     
-    // Clean up
     return () => {
       if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.onMessage.removeListener(messageListener);
+        chrome.runtime.onMessage.removeListener(handleMessage);
       }
     };
-  }, [checkConnection]);
+  }, [checkConnection, handleMessage]);
 
   const handleTranslatePage = async () => {
     await translatePage();

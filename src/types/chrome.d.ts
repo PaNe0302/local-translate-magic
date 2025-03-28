@@ -14,6 +14,13 @@ interface Chrome {
           sendResponse: (response?: any) => void
         ) => boolean | void
       ) => void;
+      removeListener: (
+        callback: (
+          message: any,
+          sender: any,
+          sendResponse: (response?: any) => void
+        ) => boolean | void
+      ) => void;
     };
     sendMessage: (message: any, callback?: (response: any) => void) => void;
     lastError?: {

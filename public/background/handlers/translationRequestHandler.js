@@ -23,8 +23,9 @@ export async function handleTranslatePageRequest(request, sendResponse) {
       const tabId = tabs[0].id;
       
       try {
-        // Import dynamically to avoid circular dependencies
-        const { ensureContentScript, getPageContent } = await import('../contentInjectionHandler.js');
+        // Import from our refactored module structure
+        const { ensureContentScript } = await import('../handlers/contentScriptInjectionHandler.js');
+        const { getPageContent } = await import('../handlers/contentRetrievalHandler.js');
         
         // Ensure content script is injected
         await ensureContentScript(tabId);

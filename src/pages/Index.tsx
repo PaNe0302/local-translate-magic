@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/hooks/useTranslation';
 import Header from '@/components/Header';
 import TranslationPopup from '@/components/TranslationPopup';
@@ -19,30 +21,40 @@ const Index = () => {
     targetLanguage 
   } = useTranslation();
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   const handleMessage = useCallback((message) => {
     if (message.action === 'translationProgress') {
+      const completed = message.completed;
+      const total = message.total;
+      
       setProgress({
-        completed: message.completed,
-        total: message.total
+        completed,
+        total
       });
       
-      if (message.completed % 10 === 0 || message.completed === message.total) {
-        toast.info(`Translation progress: ${message.completed} of ${message.total} elements`);
+      // Calculate percentage for progress bar
+      setProgressPercentage(total > 0 ? Math.floor((completed / total) * 100) : 0);
+      
+      if (completed % 10 === 0 || completed === total) {
+        toast.info(`Tiến độ dịch: ${completed} / ${total} phần tử`);
       }
     } else if (message.action === 'translationComplete') {
       setProgress({ completed: 0, total: 0 });
+      setProgressPercentage(0);
       if (message.failed > 0) {
-        toast.warning(`Translation completed with ${message.failed} errors`);
+        toast.warning(`Dịch hoàn tất với ${message.failed} lỗi`);
       } else {
-        toast.success(`Translation completed successfully`);
+        toast.success(`Dịch hoàn tất thành công`);
       }
     } else if (message.action === 'translationError') {
       setProgress({ completed: 0, total: 0 });
-      toast.error(`Translation error: ${message.error}`);
+      setProgressPercentage(0);
+      toast.error(`Lỗi dịch: ${message.error}`);
     } else if (message.action === 'translationCancelled') {
       setProgress({ completed: 0, total: 0 });
-      toast.info('Translation cancelled');
+      setProgressPercentage(0);
+      toast.info('Đã hủy dịch');
     }
   }, []);
 
@@ -113,13 +125,14 @@ const Index = () => {
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           {isTranslating || progress.total > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {progress.total > 0 && (
-                <div className="w-full bg-muted rounded-full h-2.5 mb-2">
-                  <div 
-                    className="bg-primary h-2.5 rounded-full" 
-                    style={{ width: `${Math.floor((progress.completed / progress.total) * 100)}%` }}
-                  ></div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Tiến độ dịch:</span>
+                    <span>{progress.completed} / {progress.total} ({progressPercentage}%)</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
                 </div>
               )}
               <Button 
@@ -127,7 +140,7 @@ const Index = () => {
                 onClick={handleCancelTranslation}
               >
                 <X className="h-4 w-4" />
-                <span>Cancel Translation</span>
+                <span>Hủy dịch</span>
               </Button>
             </div>
           ) : (
@@ -136,7 +149,7 @@ const Index = () => {
               onClick={handleTranslatePage}
               disabled={!isConnected}
             >
-              <span>Translate Current Page</span>
+              <span>Dịch trang hiện tại</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}

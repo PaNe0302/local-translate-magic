@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { translationApi } from './translationApi';
 import { startBackgroundTranslation } from './translation/backgroundTranslation';
 import { getLanguageName } from './translation/translationUtils';
+import { pageContentService } from './pageContentService';
+import { chromeApiService } from './chromeApiService';
 
 class PageTranslationService {
   private isTranslating: boolean = false;
@@ -91,8 +93,5 @@ class PageTranslationService {
     return this.targetLanguage;
   }
 }
-
-// Import at the end to avoid circular dependencies
-import { chromeApiService } from './chromeApiService';
 
 export const pageTranslationService = new PageTranslationService();
